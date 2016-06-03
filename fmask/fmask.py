@@ -569,12 +569,15 @@ def doCloudLayerFinalPass(fmaskFilenames, fmaskConfig, pass1file, pass2file,
     otherargs.landThreshold = landThreshold
     otherargs.Tlow = Tlow
     otherargs.thermalInfo = fmaskConfig.thermalInfo
+    otherargs.minCloudSize = fmaskConfig.minCloudSize_pixels
 
     (fd, outfiles.cloudmask) = tempfile.mkstemp(prefix='interimcloud', 
         dir=fmaskConfig.tempDir, suffix=fmaskConfig.defaultExtension)
     os.close(fd)
     # Need overlap so we can do Fmask's 3x3 fill-in
     overlap = 1
+    # Also need overlap for cloud size filter
+    overlap = max(overlap, fmaskConfig.minCloudSize_pixels)
         
     controls.setOverlap(overlap)
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
@@ -619,6 +622,14 @@ def cloudFinalPass(info, inputs, outputs, otherargs):
     # Equation 18
     cloudmask = cloudmask1 | cloudmask2 | cloudmask3 | cloudmask4
     cloudmask[nullmask] = 0
+    
+    # If required, filter out small clouds. 
+    if otherargs.minCloudSize > 1:
+        (clumps, numClumps) = label(cloudmask)
+        clumpSizes = numpy.bincount(clumps.flatten())
+        clumpSizes[0] = 0       # Knock out the size of the null area
+        sizeImg = clumpSizes[clumps]
+        cloudmask[sizeImg < otherargs.minCloudSize] = 0
 
     # Apply the prescribed 3x3 buffer. According to Zhu&Woodcock (page 87, end of section 3.1.2) 
     # they set a pixel to cloud if 5 or more of its 3x3 neighbours is cloud. 
