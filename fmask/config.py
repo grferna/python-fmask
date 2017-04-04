@@ -79,8 +79,17 @@ class FmaskConfig(object):
     cirrusBandTestThresh = 0.01
     Eqn7Swir2Thresh = 0.03
     Eqn20ThermThresh = 3.8
+    Eqn20NirSnowThresh = 0.11
+    Eqn20GreenSnowThresh = 0.1
     cirrusProbRatio = 0.04
     Eqn19NIRFillThresh = 0.02
+    
+    # Constant term at the end of Equation 17. Zhu's MATLAB code now has this as a configurable
+    # value, which they recommend as 22.5% (i.e. 0.225)
+    Eqn17CloudProbThresh = 0.2
+    
+    # GDAL driver for final output file
+    gdalDriverName = applier.DEFAULTDRIVERNAME
     
     def __init__(self, sensor):
         """
@@ -274,6 +283,16 @@ class FmaskConfig(object):
         """
         self.Eqn7Swir2Thresh = thresh
         
+    def setEqn17CloudProbThresh(self, thresh):
+        """
+        Change the threshold used by Equation 17. The threshold
+        given here is the constant term added to the end of the equation
+        for the land probability threshold. Original paper had this as 0.2,
+        although Zhu et al's MATLAB code now defaults it to 0.225 (i.e. 22.5%)
+        
+        """
+        self.Eqn17CloudProbThresh = thresh
+        
     def setEqn20ThermThresh(self, thresh):
         """
         Change the threshold used by Equation 20 (snow)
@@ -281,6 +300,22 @@ class FmaskConfig(object):
         
         """
         self.Eqn20ThermThresh = thresh
+        
+    def setEqn20NirSnowThresh(self, thresh):
+        """
+        Change the threshold used by Equation 20 (snow)
+        for NIR reflectance. This defaults to 0.11
+        
+        """
+        self.Eqn20NirSnowThresh = thresh
+        
+    def setEqn20GreenSnowThresh(self, thresh):
+        """
+        Change the threshold used by Equation 20 (snow)
+        for green reflectance. This defaults to 0.1
+        
+        """
+        self.Eqn20GreenSnowThresh = thresh
         
     def setCirrusProbRatio(self, ratio):
         """
@@ -299,6 +334,14 @@ class FmaskConfig(object):
         
         """
         self.Eqn19NIRFillThresh = thresh
+    
+    def setGdalDriverName(self, driverName):
+        """
+        Change the GDAL driver used for writing the final output file. Default
+        value is taken from the default for the RIOS package, as per $RIOS_DFLT_DRIVER. 
+        """
+        self.gdalDriverName = driverName
+
 
 class FmaskFilenames(object):
     """

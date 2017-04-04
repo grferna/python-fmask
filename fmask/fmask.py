@@ -397,7 +397,8 @@ def potentialCloudFirstPass(info, inputs, outputs, otherargs):
     
     # Equation 20
     # In two parts, in case we are missing thermal
-    snowmask = (ndsi > 0.15) & (ref[nir] > 0.11) & (ref[green] > 0.1)
+    snowmask = ((ndsi > 0.15) & (ref[nir] > fmaskConfig.Eqn20NirSnowThresh) & 
+        (ref[green] > fmaskConfig.Eqn20GreenSnowThresh))
     if hasattr(inputs, 'thermal'):
         snowmask = snowmask & (bt < fmaskConfig.Eqn20ThermThresh)
     snowmask[nullmask] = False
@@ -501,9 +502,9 @@ def doPotentialCloudSecondPass(fmaskFilenames, fmaskConfig, pass1file,
     # Equation 17
     landThreshold = scoreatpcnt(otherargs.lCloudProb_hist, 82.5)
     if landThreshold is not None:
-        landThreshold = landThreshold / PROB_SCALE + 0.2
+        landThreshold = landThreshold / PROB_SCALE + fmaskConfig.Eqn17CloudProbThresh
     else:
-        landThreshold = 0.2
+        landThreshold = fmaskConfig.Eqn17CloudProbThresh
     return (outfiles.pass2, landThreshold)
 
 
@@ -1203,6 +1204,7 @@ def finalizeAll(fmaskFilenames, fmaskConfig, interimCloudmask, interimShadowmask
     controls.setStatsIgnore(OUTCODE_NULL)
     controls.setWindowXsize(RIOS_WINDOW_SIZE)
     controls.setWindowYsize(RIOS_WINDOW_SIZE)
+    controls.setOutputDriverName(fmaskConfig.gdalDriverName)
     
     if fmaskConfig.cloudBufferSize > 0:
         otherargs.bufferkernel = makeBufferKernel(fmaskConfig.cloudBufferSize)
